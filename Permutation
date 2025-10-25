@@ -176,4 +176,131 @@ uint64_t FP(uint64_t in) {
     return out;
 }
 
+uint64_t E_box(uint32_t R) {
+    uint64_t out = 0ULL;
+
+    /* Note: GETBIT32 uses positions 1..32 where 1 is MSB of the 32-bit word. */
+    SETBIT64(out, 1,  GETBIT32(R, 32));
+    SETBIT64(out, 2,  GETBIT32(R, 1));
+    SETBIT64(out, 3,  GETBIT32(R, 2));
+    SETBIT64(out, 4,  GETBIT32(R, 3));
+    SETBIT64(out, 5,  GETBIT32(R, 4));
+    SETBIT64(out, 6,  GETBIT32(R, 5));
+
+    SETBIT64(out, 7,  GETBIT32(R, 4));
+    SETBIT64(out, 8,  GETBIT32(R, 5));
+    SETBIT64(out, 9,  GETBIT32(R, 6));
+    SETBIT64(out,10,  GETBIT32(R, 7));
+    SETBIT64(out,11,  GETBIT32(R, 8));
+    SETBIT64(out,12,  GETBIT32(R, 9));
+
+    SETBIT64(out,13,  GETBIT32(R, 8));
+    SETBIT64(out,14,  GETBIT32(R, 9));
+    SETBIT64(out,15,  GETBIT32(R, 10));
+    SETBIT64(out,16,  GETBIT32(R, 11));
+    SETBIT64(out,17,  GETBIT32(R, 12));
+    SETBIT64(out,18,  GETBIT32(R, 13));
+
+    SETBIT64(out,19,  GETBIT32(R, 12));
+    SETBIT64(out,20,  GETBIT32(R, 13));
+    SETBIT64(out,21,  GETBIT32(R, 14));
+    SETBIT64(out,22,  GETBIT32(R, 15));
+    SETBIT64(out,23,  GETBIT32(R, 16));
+    SETBIT64(out,24,  GETBIT32(R, 17));
+
+    SETBIT64(out,25,  GETBIT32(R, 16));
+    SETBIT64(out,26,  GETBIT32(R, 17));
+    SETBIT64(out,27,  GETBIT32(R, 18));
+    SETBIT64(out,28,  GETBIT32(R, 19));
+    SETBIT64(out,29,  GETBIT32(R, 20));
+    SETBIT64(out,30,  GETBIT32(R, 21));
+
+    SETBIT64(out,31,  GETBIT32(R, 20));
+    SETBIT64(out,32,  GETBIT32(R, 21));
+    SETBIT64(out,33,  GETBIT32(R, 22));
+    SETBIT64(out,34,  GETBIT32(R, 23));
+    SETBIT64(out,35,  GETBIT32(R, 24));
+    SETBIT64(out,36,  GETBIT32(R, 25));
+
+    SETBIT64(out,37,  GETBIT32(R, 24));
+    SETBIT64(out,38,  GETBIT32(R, 25));
+    SETBIT64(out,39,  GETBIT32(R, 26));
+    SETBIT64(out,40,  GETBIT32(R, 27));
+    SETBIT64(out,41,  GETBIT32(R, 28));
+    SETBIT64(out,42,  GETBIT32(R, 29));
+
+    SETBIT64(out,43,  GETBIT32(R, 28));
+    SETBIT64(out,44,  GETBIT32(R, 29));
+    SETBIT64(out,45,  GETBIT32(R, 30));
+    SETBIT64(out,46,  GETBIT32(R, 31));
+    SETBIT64(out,47,  GETBIT32(R, 32));
+    SETBIT64(out,48,  GETBIT32(R, 1));
+
+    return out; /* left-aligned: bits occupy positions 1..48 inside 64-bit word */
+}
+
+/* ---- P-box permutation (32 -> 32) ----
+   P table mapping as standard DES P.
+*/
+uint32_t P_box(uint32_t in) {
+    uint32_t out = 0U;
+
+    SETBIT32(out, 1,  GETBIT32(in, 16));
+    SETBIT32(out, 2,  GETBIT32(in, 7));
+    SETBIT32(out, 3,  GETBIT32(in, 20));
+    SETBIT32(out, 4,  GETBIT32(in, 21));
+    SETBIT32(out, 5,  GETBIT32(in, 29));
+    SETBIT32(out, 6,  GETBIT32(in, 12));
+    SETBIT32(out, 7,  GETBIT32(in, 28));
+    SETBIT32(out, 8,  GETBIT32(in, 17));
+
+    SETBIT32(out, 9,  GETBIT32(in, 1));
+    SETBIT32(out,10,  GETBIT32(in, 15));
+    SETBIT32(out,11,  GETBIT32(in, 23));
+    SETBIT32(out,12,  GETBIT32(in, 26));
+    SETBIT32(out,13,  GETBIT32(in, 5));
+    SETBIT32(out,14,  GETBIT32(in, 18));
+    SETBIT32(out,15,  GETBIT32(in, 31));
+    SETBIT32(out,16,  GETBIT32(in, 10));
+
+    SETBIT32(out,17,  GETBIT32(in, 2));
+    SETBIT32(out,18,  GETBIT32(in, 8));
+    SETBIT32(out,19,  GETBIT32(in, 24));
+    SETBIT32(out,20,  GETBIT32(in, 14));
+    SETBIT32(out,21,  GETBIT32(in, 32));
+    SETBIT32(out,22,  GETBIT32(in, 27));
+    SETBIT32(out,23,  GETBIT32(in, 3));
+    SETBIT32(out,24,  GETBIT32(in, 9));
+
+    SETBIT32(out,25,  GETBIT32(in, 19));
+    SETBIT32(out,26,  GETBIT32(in, 13));
+    SETBIT32(out,27,  GETBIT32(in, 30));
+    SETBIT32(out,28,  GETBIT32(in, 6));
+    SETBIT32(out,29,  GETBIT32(in, 22));
+    SETBIT32(out,30,  GETBIT32(in, 11));
+    SETBIT32(out,31,  GETBIT32(in, 4));
+    SETBIT32(out,32,  GETBIT32(in, 25));
+
+    return out;
+}
+
+/* ---- Utility: print bits of a 64-bit value (MSB left) ---- */
+void print_bits64(uint64_t v) {
+    for (int i = 1; i <= 64; ++i) {
+        putchar(GETBIT64(v, i) ? '1' : '0');
+        if (i % 8 == 0 && i != 64) putchar(' ');
+    }
+    putchar('\n');
+}
+
+/* ---- Utility: print bits of 32-bit value ---- */
+void print_bits32(uint32_t v) {
+    for (int i = 1; i <= 32; ++i) {
+        putchar(GETBIT32(v, i) ? '1' : '0');
+        if (i % 8 == 0 && i != 32) putchar(' ');
+    }
+    putchar('\n');
+}
+
+
 
