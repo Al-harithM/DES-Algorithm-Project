@@ -234,7 +234,7 @@ uint32_t P_box(uint32_t in) {
 }
 
 /*
-To be implemented by team member
+To be implemented
 Generate all 16 round keys
     unsigned long long round_keys[ROUNDS];
     generate_round_keys(key, round_keys);
