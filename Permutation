@@ -15,3 +15,165 @@
 #define SETBIT32(result,pos,bit) do { \
     if ((bit) & 1U) result |= (1U << (32 - (pos))); \
 } while(0)
+
+//intial Permutation implementation , function mame to be used "IP"
+
+uint64_t IP(uint64_t in) {
+    uint64_t out = 0ULL;
+
+    SETBIT64(out, 1,  GETBIT64(in, 58));
+    SETBIT64(out, 2,  GETBIT64(in, 50));
+    SETBIT64(out, 3,  GETBIT64(in, 42));
+    SETBIT64(out, 4,  GETBIT64(in, 34));
+    SETBIT64(out, 5,  GETBIT64(in, 26));
+    SETBIT64(out, 6,  GETBIT64(in, 18));
+    SETBIT64(out, 7,  GETBIT64(in, 10));
+    SETBIT64(out, 8,  GETBIT64(in, 2));
+
+    SETBIT64(out, 9,  GETBIT64(in, 60));
+    SETBIT64(out,10,  GETBIT64(in, 52));
+    SETBIT64(out,11,  GETBIT64(in, 44));
+    SETBIT64(out,12,  GETBIT64(in, 36));
+    SETBIT64(out,13,  GETBIT64(in, 28));
+    SETBIT64(out,14,  GETBIT64(in, 20));
+    SETBIT64(out,15,  GETBIT64(in, 12));
+    SETBIT64(out,16,  GETBIT64(in, 4));
+
+    SETBIT64(out,17,  GETBIT64(in, 62));
+    SETBIT64(out,18,  GETBIT64(in, 54));
+    SETBIT64(out,19,  GETBIT64(in, 46));
+    SETBIT64(out,20,  GETBIT64(in, 38));
+    SETBIT64(out,21,  GETBIT64(in, 30));
+    SETBIT64(out,22,  GETBIT64(in, 22));
+    SETBIT64(out,23,  GETBIT64(in, 14));
+    SETBIT64(out,24,  GETBIT64(in, 6));
+
+    SETBIT64(out,25,  GETBIT64(in, 64));
+    SETBIT64(out,26,  GETBIT64(in, 56));
+    SETBIT64(out,27,  GETBIT64(in, 48));
+    SETBIT64(out,28,  GETBIT64(in, 40));
+    SETBIT64(out,29,  GETBIT64(in, 32));
+    SETBIT64(out,30,  GETBIT64(in, 24));
+    SETBIT64(out,31,  GETBIT64(in, 16));
+    SETBIT64(out,32,  GETBIT64(in, 8));
+
+    SETBIT64(out,33,  GETBIT64(in, 57));
+    SETBIT64(out,34,  GETBIT64(in, 49));
+    SETBIT64(out,35,  GETBIT64(in, 41));
+    SETBIT64(out,36,  GETBIT64(in, 33));
+    SETBIT64(out,37,  GETBIT64(in, 25));
+    SETBIT64(out,38,  GETBIT64(in, 17));
+    SETBIT64(out,39,  GETBIT64(in, 9));
+    SETBIT64(out,40,  GETBIT64(in, 1));
+
+    SETBIT64(out,41,  GETBIT64(in, 59));
+    SETBIT64(out,42,  GETBIT64(in, 51));
+    SETBIT64(out,43,  GETBIT64(in, 43));
+    SETBIT64(out,44,  GETBIT64(in, 35));
+    SETBIT64(out,45,  GETBIT64(in, 27));
+    SETBIT64(out,46,  GETBIT64(in, 19));
+    SETBIT64(out,47,  GETBIT64(in, 11));
+    SETBIT64(out,48,  GETBIT64(in, 3));
+
+    SETBIT64(out,49,  GETBIT64(in, 61));
+    SETBIT64(out,50,  GETBIT64(in, 53));
+    SETBIT64(out,51,  GETBIT64(in, 45));
+    SETBIT64(out,52,  GETBIT64(in, 37));
+    SETBIT64(out,53,  GETBIT64(in, 29));
+    SETBIT64(out,54,  GETBIT64(in, 21));
+    SETBIT64(out,55,  GETBIT64(in, 13));
+    SETBIT64(out,56,  GETBIT64(in, 5));
+
+    SETBIT64(out,57,  GETBIT64(in, 63));
+    SETBIT64(out,58,  GETBIT64(in, 55));
+    SETBIT64(out,59,  GETBIT64(in, 47));
+    SETBIT64(out,60,  GETBIT64(in, 39));
+    SETBIT64(out,61,  GETBIT64(in, 31));
+    SETBIT64(out,62,  GETBIT64(in, 23));
+    SETBIT64(out,63,  GETBIT64(in, 15));
+    SETBIT64(out,64,  GETBIT64(in, 7));
+
+    return out;
+}
+
+//Inverse Permutation implementation , function Name to be used "FP"
+
+uint64_t FP(uint64_t in) {
+    uint64_t out = 0ULL;
+
+    SETBIT64(out, 1, GETBIT64(in, 40));
+    SETBIT64(out, 2, GETBIT64(in, 8));
+    SETBIT64(out, 3, GETBIT64(in, 48));
+    SETBIT64(out, 4, GETBIT64(in, 16));
+    SETBIT64(out, 5, GETBIT64(in, 56));
+    SETBIT64(out, 6, GETBIT64(in, 24));
+    SETBIT64(out, 7, GETBIT64(in, 64));
+    SETBIT64(out, 8, GETBIT64(in, 32));
+
+    SETBIT64(out, 9, GETBIT64(in, 39));
+    SETBIT64(out,10, GETBIT64(in, 7));
+    SETBIT64(out,11, GETBIT64(in, 47));
+    SETBIT64(out,12, GETBIT64(in, 15));
+    SETBIT64(out,13, GETBIT64(in, 55));
+    SETBIT64(out,14, GETBIT64(in, 23));
+    SETBIT64(out,15, GETBIT64(in, 63));
+    SETBIT64(out,16, GETBIT64(in, 31));
+
+    SETBIT64(out,17, GETBIT64(in, 38));
+    SETBIT64(out,18, GETBIT64(in, 6));
+    SETBIT64(out,19, GETBIT64(in, 46));
+    SETBIT64(out,20, GETBIT64(in, 14));
+    SETBIT64(out,21, GETBIT64(in, 54));
+    SETBIT64(out,22, GETBIT64(in, 22));
+    SETBIT64(out,23, GETBIT64(in, 62));
+    SETBIT64(out,24, GETBIT64(in, 30));
+
+    SETBIT64(out,25, GETBIT64(in, 37));
+    SETBIT64(out,26, GETBIT64(in, 5));
+    SETBIT64(out,27, GETBIT64(in, 45));
+    SETBIT64(out,28, GETBIT64(in, 13));
+    SETBIT64(out,29, GETBIT64(in, 53));
+    SETBIT64(out,30, GETBIT64(in, 21));
+    SETBIT64(out,31, GETBIT64(in, 61));
+    SETBIT64(out,32, GETBIT64(in, 29));
+
+    SETBIT64(out,33, GETBIT64(in, 36));
+    SETBIT64(out,34, GETBIT64(in, 4));
+    SETBIT64(out,35, GETBIT64(in, 44));
+    SETBIT64(out,36, GETBIT64(in, 12));
+    SETBIT64(out,37, GETBIT64(in, 52));
+    SETBIT64(out,38, GETBIT64(in, 20));
+    SETBIT64(out,39, GETBIT64(in, 60));
+    SETBIT64(out,40, GETBIT64(in, 28));
+
+    SETBIT64(out,41, GETBIT64(in, 35));
+    SETBIT64(out,42, GETBIT64(in, 3));
+    SETBIT64(out,43, GETBIT64(in, 43));
+    SETBIT64(out,44, GETBIT64(in, 11));
+    SETBIT64(out,45, GETBIT64(in, 51));
+    SETBIT64(out,46, GETBIT64(in, 19));
+    SETBIT64(out,47, GETBIT64(in, 59));
+    SETBIT64(out,48, GETBIT64(in, 27));
+
+    SETBIT64(out,49, GETBIT64(in, 34));
+    SETBIT64(out,50, GETBIT64(in, 2));
+    SETBIT64(out,51, GETBIT64(in, 42));
+    SETBIT64(out,52, GETBIT64(in, 10));
+    SETBIT64(out,53, GETBIT64(in, 50));
+    SETBIT64(out,54, GETBIT64(in, 18));
+    SETBIT64(out,55, GETBIT64(in, 58));
+    SETBIT64(out,56, GETBIT64(in, 26));
+
+    SETBIT64(out,57, GETBIT64(in, 33));
+    SETBIT64(out,58, GETBIT64(in, 1));
+    SETBIT64(out,59, GETBIT64(in, 41));
+    SETBIT64(out,60, GETBIT64(in, 9));
+    SETBIT64(out,61, GETBIT64(in, 49));
+    SETBIT64(out,62, GETBIT64(in, 17));
+    SETBIT64(out,63, GETBIT64(in, 57));
+    SETBIT64(out,64, GETBIT64(in, 25));
+
+    return out;
+}
+
+
