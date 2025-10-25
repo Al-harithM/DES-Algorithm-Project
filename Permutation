@@ -1,0 +1,17 @@
+
+#include <stdio.h>
+#include <stdint.h>
+
+// Bit helpers by using Marcos 
+
+#define GETBIT64(x,pos) ( ( (x) >> (64 - (pos)) ) & 1ULL )  /* Get bit from uint64_t where pos is 1..64 and 1 is MSB */
+
+#define SETBIT64(result,pos,bit) do { \
+    if ((bit) & 1ULL) result |= (1ULL << (64 - (pos))); \
+} while(0)
+
+#define GETBIT32(x,pos) ( ( (x) >> (32 - (pos)) ) & 1U )
+
+#define SETBIT32(result,pos,bit) do { \
+    if ((bit) & 1U) result |= (1U << (32 - (pos))); \
+} while(0)
