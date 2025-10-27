@@ -18,7 +18,7 @@ uint32_t P_box(uint32_t in);
 uint64_t PC1(uint64_t key); //take the 64-bit key to permutate them into 56 bit
 uint64_t PC2(uint64_t cd56); //take the 56-bit key to permutate them into 48 bit
 uint64_t left_circular_shift(uint64_t val, int shift);
-
+uint64_t generate_keys(uint64_t key);
 char SBOX[64 * 8] = {
     // S1
     14,4,13,1,2,15,11,8,3,10,6,12,5,9,0,7,
@@ -68,6 +68,29 @@ char SBOX[64 * 8] = {
     7,11,4,1,9,12,14,2,0,6,10,13,15,3,5,8,
     2,1,14,7,4,10,8,13,15,12,9,0,3,5,6,11
 };
+
+uint64_t keys[ROUNDS];
+
+void generate_keys(uint64_t key){
+    uint64_t k_56 = pc1(key);
+    uint32_t C = (k_56 >> 28) & 0x000000000FFFFFFF;
+    uint32_t D = k_56 & 0x000000000FFFFFFF;
+    for (int i = 1; i <= ROUNDS; i++){
+        uint8_t shifts;
+        if ( i == 1 || i == 2 || i == 9 || i == 16){
+            shifts = 1;
+        } else {
+            shifts = 2;
+        }
+
+        C = ((C << shifts) | (C >> (28 - shifts))) & 0x000000000FFFFFFF;
+        D = ((D << shifts) | (D >> (28 - shifts))) & 0x000000000FFFFFFF;
+
+        uint64_t CD = ((uint64_t)C << 28) | (uint64_t)D;
+        
+        keys[i - 1] = pc2(CD);
+    }
+}
 
 // single round function: XOR with key, E-box, S-box, P-box
 uint32_t func(uint32_t r, uint64_t k) {
@@ -171,8 +194,7 @@ uint64_t E_box(uint32_t R) {
 }
 
 // S-box (48 bits -> 32 bits)
-uint32_t sbox(uint64_t in)
-{
+uint32_t sbox(uint64_t in){
 uint32_t res;
 for (int i = 0; i < 8; i++)
 {
@@ -232,7 +254,42 @@ uint32_t P_box(uint32_t in) {
 
     return out;
 }
+/*
+FUNCTION Generate_Subkeys(Main_Key: 64-bit block)
+    // 1. التبديل الاختياري الأول (PC-1): يقلل المفتاح من 64 إلى 56 بت
+    Key_56_bit = Apply_Permutation(Main_Key, PC_1_Table)
 
+    // 2. تقسيم الـ 56 بت إلى نصفين C0 و D0
+    C_i = Key_56_bit[0:28] // النصف الأيسر
+    D_i = Key_56_bit[28:56] // النصف الأيمن
+
+    // تعريف عدد الإزاحات لكل جولة
+    Shift_Amounts = [1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1]
+    Subkeys = Array_of_16_Subkeys
+
+    FOR i FROM 1 TO 16 DO
+        // 3. الإزاحة الدوارنية اليسرى (Circular Left Shift)
+        Shift_Count = Shift_Amounts[i-1]
+        C_i+1 = Left_Circular_Shift(C_i, Shift_Count)
+        D_i+1 = Left_Circular_Shift(D_i, Shift_Count)
+
+        // دمج النصفين لإنتاج المفتاح المرشح للجولة
+        Key_Candidate_56_bit = Concatenate(C_i+1, D_i+1)
+
+        // 4. التبديل الاختياري الثاني (PC-2): يقلل المفتاح من 56 إلى 48 بت
+        K_i = Apply_Permutation(Key_Candidate_56_bit, PC_2_Table)
+
+        // تخزين المفتاح الفرعي
+        Subkeys[i] = K_i
+
+        // تحديث C و D للجولة التالية
+        C_i = C_i+1
+        D_i = D_i+1
+    END FOR
+
+    RETURN Subkeys // مصفوفة الـ 16 مفتاحاً فرعياً
+END FUNCTION
+*/
 /*
 To be implemented
 Generate all 16 round keys
