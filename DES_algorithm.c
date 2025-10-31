@@ -1,24 +1,24 @@
 #include <stdio.h>
-#include <stdint.h>
-
-// Bit helpers by using Marcos 
-
+#include <stdlib.h> 
+#include <stdint.h> 
+#include <time.h>   
+#include <sys/types.h> 
+#include <sys/stat.h>  
 #define ROUNDS 16
 
-#define GETBIT64(x,pos) ( ( (x) >> (64 - (pos)) ) & 1ULL )  /* Get bit from uint64_t where pos is 1..64 and 1 is MSB */
-
+/* Bit helpers (1-based positions; pos=1 is MSB) */
+#define GETBIT64(x,pos) ( ( (x) >> (64 - (pos)) ) & 1ULL )
 #define SETBIT64(result,pos,bit) do { \
-    if ((bit) & 1ULL) result |= (1ULL << (64 - (pos))); \
+    if ((bit) & 1ULL) (result) |= (1ULL << (64 - (pos))); \
 } while(0)
 
 #define GETBIT32(x,pos) ( ( (x) >> (32 - (pos)) ) & 1U )
-
 #define SETBIT32(result,pos,bit) do { \
-    if ((bit) & 1U) result |= (1U << (32 - (pos))); \
+    if ((bit) & 1U) (result) |= (1U << (32 - (pos))); \
 } while(0)
 
-//intial Permutation implementation , function mame to be used "IP" , get 64 , give 64 bit
-
+/* ---------- IP (Initial Permutation) ---------- */
+/* input: 64-bit (MSB=pos1), output: 64-bit left-aligned (bits placed into positions 1..64) */
 uint64_t IP(uint64_t in) {
     uint64_t out = 0ULL;
 
@@ -97,8 +97,7 @@ uint64_t IP(uint64_t in) {
     return out;
 }
 
-//Inverse Permutation implementation , function Name to be used "FP"
-
+/* ---------- FP (Final Permutation) ---------- */
 uint64_t FP(uint64_t in) {
     uint64_t out = 0ULL;
 
@@ -177,12 +176,11 @@ uint64_t FP(uint64_t in) {
     return out;
 }
 
-//Expansion box implementation , function Name to be used "E_box() , get 32 bit , return 32 bir"
+/* ---------- E-box (32 -> 48) ---------- */
 
 uint64_t E_box(uint32_t R) {
     uint64_t out = 0ULL;
 
-   
     SETBIT64(out, 1,  GETBIT32(R, 32));
     SETBIT64(out, 2,  GETBIT32(R, 1));
     SETBIT64(out, 3,  GETBIT32(R, 2));
@@ -239,12 +237,11 @@ uint64_t E_box(uint32_t R) {
     SETBIT64(out,47,  GETBIT32(R, 32));
     SETBIT64(out,48,  GETBIT32(R, 1));
 
-    return out; /* left-aligned: bits occupy positions 1..48 inside 64-bit word */
+    return out; /* left-aligned: bits occupy positions 1..48 inside the 64-bit word */
 }
 
-//P-BOX (Permutation) implementation , function Name to be used "P_box()" used after S-Box and befor XOR at the end 
-
-
+/* ---------- P-box (32 -> 32) ---------- */
+/* input 32-bit (MSB pos1). Output 32-bit (MSB pos1). */
 uint32_t P_box(uint32_t in) {
     uint32_t out = 0U;
 
@@ -287,8 +284,8 @@ uint32_t P_box(uint32_t in) {
     return out;
 }
 
-//Permutation choice_1 implementation , function Name to be used "PC1()" take the 64-bit key to permutate them into 56 
-
+/* ---------- PC1 (64 -> 56) ---------- */
+/* returns left-aligned 56-bit (bits placed into positions 1..56) */
 uint64_t PC1(uint64_t key) {
     uint64_t out = 0ULL;
 
@@ -359,9 +356,9 @@ uint64_t PC1(uint64_t key) {
     return out;
 }
 
-//Permutation choice_2 implementation , function Name to be used "PC2()" take the 56-bit key to permutate them into 48 
-
-
+/* ---------- PC2 (56 -> 48) ---------- */
+/* cd56: left-aligned 56-bit input (bits in positions 1..56)
+   returns left-aligned 48-bit output (bits in positions 1..48) */
 uint64_t PC2(uint64_t cd56) {
     uint64_t out = 0ULL;
 
@@ -424,8 +421,8 @@ uint64_t PC2(uint64_t cd56) {
     return out;
 }
 
-
-char SBOX[64 * 8] = {
+/* ---------- S-Boxes (must store these) ---------- */
+static const unsigned char SBOX[64 * 8] = {
     // S1
     14,4,13,1,2,15,11,8,3,10,6,12,5,9,0,7,
     0,15,7,4,14,2,13,1,10,6,12,11,9,5,3,8,
@@ -475,96 +472,248 @@ char SBOX[64 * 8] = {
     2,1,14,7,4,10,8,13,15,12,9,0,3,5,6,11
 };
 
-// S-box (48 bits -> 32 bits)
-uint32_t sbox(uint64_t in){
-uint32_t res;
-for (int i = 0; i < 8; i++)
-{
-// Get 6 each 6 bit from data
-int index = (in >> (42 - i * 6)) & 0x3F; // 0x3F --> 111111
-// if 6 bits are 0 1111 1 ---> 0 1 1111
-index = (index & 0x20) | (index & 1) << 4 | (index >> 1 & 0xF);
-// Get 4 bits corresponding to the index
-res |= ((SBOX[(64 * i) + index]) << (28 - 4 * i));
-}
-return res;
+/* ---------- S-box stage: take left-aligned 48-bit input (bits in positions 1..48) ---------- */
+/* returns 32-bit value right where MSB corresponds to position1 of 32-bit word (we pack with shifts) */
+uint32_t sbox_sub(uint64_t in_left48) {
+    uint32_t res = 0U;
+
+    for (int i = 0; i < 8; ++i) {
+        /* For i-th S-box, bits occupy positions (1 + i*6) .. (1 + i*6 + 5) inside left-aligned 48-bit */
+        int start_pos = 1 + i * 6; // 1..43
+        unsigned int six = 0;
+        for (int b = 0; b < 6; ++b) {
+            six = (six << 1) | (unsigned int)GETBIT64(in_left48, start_pos + b);
+        }
+        /* bits: b1 b2 b3 b4 b5 b6  where b1 is MSB of the 6
+           row = (b1 << 1) | b6
+           col = b2..b5
+        */
+        unsigned int b1 = (six >> 5) & 0x1;
+        unsigned int b6 = six & 0x1;
+        unsigned int row = (b1 << 1) | b6;
+        unsigned int col = (six >> 1) & 0xF;
+        unsigned int sidx = (i * 64) + (row * 16) + col;
+        unsigned int val = (unsigned int)SBOX[sidx] & 0xF;
+        /* place 4-bit val into res: left-to-right -> highest nibble first */
+        res |= (val << (28 - 4 * i));
+    }
+    return res;
 }
 
+/* ---------- Round key storage: each key is left-aligned 48-bit in 64-bit container ---------- */
 uint64_t keys[ROUNDS];
 
-void generate_keys(uint64_t key){
-    uint64_t k_56 = PC1(key);
-    uint32_t C = (k_56 >> 28) & 0x000000000FFFFFFF;
-    uint32_t D = k_56 & 0x000000000FFFFFFF;
-    for (int i = 1; i <= ROUNDS; i++){
-        uint8_t shifts;
-        if ( i == 1 || i == 2 || i == 9 || i == 16){
-            shifts = 1;
-        } else {
-            shifts = 2;
-        }
+/* ---------- Key schedule ---------- */
+void generate_keys(uint64_t key) {
+    // PC1 returns left-aligned 56-bit (positions 1..56). Right-align it for splitting:
+    uint64_t k56_left = PC1(key);             // left-aligned (bits 1..56)
+    uint64_t k56 = k56_left >> (64 - 56);     // right-aligned 56-bit (low 56 bits)
 
-        C = ((C << shifts) | (C >> (28 - shifts))) & 0x000000000FFFFFFF;
-        D = ((D << shifts) | (D >> (28 - shifts))) & 0x000000000FFFFFFF;
+    uint32_t C = (uint32_t)((k56 >> 28) & 0x0FFFFFFF); // top 28 bits
+    uint32_t D = (uint32_t)(k56 & 0x0FFFFFFF);         // low 28 bits
 
-        uint64_t CD = ((uint64_t)C << 28) | (uint64_t)D;
-        
-        keys[i - 1] = PC2(CD);
+    for (int i = 1; i <= ROUNDS; ++i) {
+        int shifts;
+        if (i == 1 || i == 2 || i == 9 || i == 16) shifts = 1;
+        else shifts = 2;
+
+        // rotate left on 28-bit halves
+        C = ((C << shifts) | (C >> (28 - shifts))) & 0x0FFFFFFF;
+        D = ((D << shifts) | (D >> (28 - shifts))) & 0x0FFFFFFF;
+
+        // form right-aligned 56-bit CD
+        uint64_t CD_right = (((uint64_t)C) << 28) | (uint64_t)D;
+
+        // left-align into 64-bit (positions 1..56)
+        uint64_t CD_left = CD_right << (64 - 56);
+
+        // PC2 expects left-aligned 56-bit and returns left-aligned 48-bit key
+        keys[i - 1] = PC2(CD_left);
     }
 }
 
-
-// single round function: XOR with key, E-box, S-box, P-box
-uint32_t func(uint32_t r, uint64_t k) {
-    uint64_t f0 = E_box(r);      // 32-bit R -> 48-bit f0
-    uint64_t f1 = f0 ^ k;        // f0 XOR 48-bit Round Key
-    uint32_t f2 = sbox(f1);      // 48-bit -> 32-bit
-    return P_box(f2);     // 32-bit permutation
+//single round feistel function using left-aligned keys and left-aligned E-box output 
+uint32_t func(uint32_t r, uint64_t k_left48) {
+    uint64_t f0 = E_box(r);         // left-aligned 48-bit
+    uint64_t f1 = f0 ^ k_left48;    // left-aligned 48-bit
+    uint32_t f2 = sbox_sub(f1);     // 32-bit
+    return P_box(f2);               // permutation -> 32-bit
 }
 
-uint64_t processBlock(uint64_t block, uint64_t subkeys[16], int mode)
-{
-    uint64_t permuted_block;
-    //Initial permutation
-    permuted_block = IP(block);
+/* ---------- Process one 64-bit block (mode 0 encrypt, 1 decrypt) ---------- */
+uint64_t processBlock(uint64_t block, int mode) {
+    // IP: left-aligned 64-bit
+    uint64_t permuted_block = IP(block);
 
-    // 2. Split into 32-bit left and right halves
-    uint32_t left = (permuted_block >> 32) & 0xFFFFFFFF;
-    uint32_t right = permuted_block & 0xFFFFFFFF;
-    uint32_t temp;
+    // extract left (high 32 bits) and right (low 32 bits); these 32-bit words use GETBIT32 semantics (MSB pos1)
+    uint32_t left = (uint32_t)((permuted_block >> 32) & 0xFFFFFFFFU);
+    uint32_t right = (uint32_t)(permuted_block & 0xFFFFFFFFU);
 
-    // 3. Perform 16 rounds of Feistel function
-    for(int i = 0;i<16;i++)
-    {
-        temp = right;
-
-        // Determine which subkey to use
-        int subkey_index = (mode == 0) ? i : (15 - i); // 0=encrypt, 1=decrypt
-
-        //Feistel function
+    for (int i = 0; i < 16; ++i) {
+        uint32_t temp = right;
+        int subkey_index = (mode == 0) ? i : (15 - i); // 0=encrypt use keys[0..15], 1=decrypt use reversed
         uint32_t f_result = func(right, keys[subkey_index]);
-
-        //f_result XOR left half to get the new right half 
         right = f_result ^ left;
-
-        //new left half is the old right half
         left = temp;
     }
 
-    //final swap, then recombine left and right havles
-    temp = left;
-    left = right;
-    right = temp;
-    uint64_t full_block = ((uint64_t)left << 32) | right;
-
-    //final permutation
-    uint64_t final_block = FP(full_block);
-
+    // swap before final permutation (standard DES)
+    uint64_t preout = (((uint64_t)right) << 32) | (uint64_t)left; // left and right placed back as 64-bit (left in high 32 bits)
+    uint64_t final_block = FP(preout);
     return final_block;
 }
 
-int main(int argc, char **argv) {
+uint64_t bswap_64(uint64_t value) {
+    return (value >> 56) | 
+           ((value << 40) & 0x00FF000000000000) |
+           ((value << 24) & 0x0000FF0000000000) |
+           ((value << 8)  & 0x000000FF00000000) |
+           ((value >> 8)  & 0x00000000FF000000) |
+           ((value >> 24) & 0x0000000000FF0000) |
+           ((value >> 40) & 0x000000000000FF00) |
+           (value << 56);
+}
 
 
+int main(int argc, char **argv)
+{
+    // --- Argument and Mode checks ---
+    if (argc != 5) {
+        printf("Usage:\n");
+        printf("  %s e keyfile plaintext ciphertext\n", argv[0]);
+        printf("  %s d keyfile ciphertext plaintext\n", argv[0]);
+        return 1;
+    }
+    int mode; //(0 = encrypt, 1 = decrypt)
+    if (argv[1][0] == 'e')
+        mode = 0;
+    else if (argv[1][0] == 'd')
+        mode = 1;
+    else {
+        printf("Invalid mode. Use 'e' for encryption or 'd' for decryption.\n");
+        return 1;
+    }
+
+    // --- START THE TIMER ---
+    clock_t start = clock();
+    
+    // --- Key Setup ---
+    FILE *fk = fopen(argv[2], "rb");
+    if (!fk) {
+        perror("Error opening key file");
+        return 1;
+    }
+    uint64_t key;
+    if (fread(&key, sizeof(uint64_t), 1, fk) != 1) {
+        printf("Error: failed to read key file.\n");
+        fclose(fk);
+        return 1;
+    }
+    fclose(fk);
+    
+    uint64_t key_swapped = bswap_64(key);
+    generate_keys(key_swapped);
+    
+    // --- File I/O Setup ---
+    FILE *fin = fopen(argv[3], "rb");
+    if (!fin) {
+        perror("Error opening input file");
+        return 1;
+    }
+    FILE *fout = fopen(argv[4], "wb");
+    if (!fout) {
+        perror("Error opening output file");
+        fclose(fin);
+        return 1;
+    }
+
+    // --- Use stat() to get file size and validate ---
+    struct stat file_stats;
+    if (stat(argv[3], &file_stats) != 0) {
+        perror("Error getting file stats");
+        fclose(fin);
+        fclose(fout);
+        return 1;
+    }
+    
+    long long total_size = file_stats.st_size;
+    if (total_size == 0) {
+        printf("Input file is empty.\n");
+        fclose(fin);
+        fclose(fout);
+        return 0;
+    }
+
+    // Validate that the file size is a multiple of 64 bits (8 bytes)
+    if (total_size % 8 != 0) {
+        printf("Error: Input file size (%lld bytes) is not a multiple of 8 bytes.\n", total_size);
+        fclose(fin);
+        fclose(fout);
+        return 1;
+    }
+
+    // --- Buffer Setup ---
+    const size_t BUFFER_SIZE = 64 * 1024 * 1024; // 64 MB buffer
+    unsigned char *in_buffer = malloc(BUFFER_SIZE);
+    unsigned char *out_buffer = malloc(BUFFER_SIZE);
+    
+    if (!in_buffer || !out_buffer) {
+        printf("Error: Failed to allocate memory for buffers\n");
+        if (in_buffer) free(in_buffer);
+        if (out_buffer) free(out_buffer);
+        fclose(fin);
+        fclose(fout);
+        return 1;
+    }
+
+    // --- Main Processing Loop ---
+    size_t bytes_read = 0;
+    long long total_bytes_processed = 0; // For progress bar
+    
+    // Declare loop variables
+    uint64_t block_in, block_out;
+    uint64_t block_in_swapped, block_out_swapped;
+
+    printf("Starting operation...\n");
+    
+    while ((bytes_read = fread(in_buffer, 1, BUFFER_SIZE, fin)) > 0) {
+        
+        for (size_t i = 0; i < bytes_read; i += 8) {
+            
+            block_in = *(uint64_t*)(in_buffer + i);
+
+            block_in_swapped = bswap_64(block_in);
+            block_out_swapped = processBlock(block_in_swapped, mode);
+            block_out = bswap_64(block_out_swapped);
+
+            *(uint64_t*)(out_buffer + i) = block_out;
+        }
+
+        // Write the processed chunk to the output file
+        fwrite(out_buffer, 1, bytes_read, fout);
+
+        // --- Update and print progress bar ---
+        total_bytes_processed += bytes_read;
+        double percent_complete = (double)total_bytes_processed / total_size * 100.0;
+        
+        // Print progress
+        printf("Progress: %.2f%% Complete\r", percent_complete);
+        fflush(stdout); // Force the line to print
+    }
+    
+    // --- Cleanup ---
+    free(in_buffer);
+    free(out_buffer);
+    fclose(fin);
+    fclose(fout);
+    
+    // --- STOP THE TIMER ---
+    clock_t end = clock();
+    double time_spent = (double)(end - start) / CLOCKS_PER_SEC;
+
+    printf("\nOperation completed successfully.\n");
+    printf("Total size: %lld bytes\n", total_size);
+    printf("Time taken: %f seconds\n", time_spent);
+    
     return 0;
 }

@@ -1,0 +1,11 @@
+# Compiled executables
+DES_algorithm
+*.exe
+
+# Test files
+*.bin
+*.txt
+*.key
+
+# Object files
+*.o

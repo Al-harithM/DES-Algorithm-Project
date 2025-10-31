@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <inttypes.h>
+    #include <time.h>
 
 #define ROUNDS 16
 
@@ -530,7 +531,7 @@ void generate_keys(uint64_t key) {
     }
 }
 
-/* ---------- single round feistel function using left-aligned keys and left-aligned E-box output ---------- */
+//single round feistel function using left-aligned keys and left-aligned E-box output 
 uint32_t func(uint32_t r, uint64_t k_left48) {
     uint64_t f0 = E_box(r);         // left-aligned 48-bit
     uint64_t f1 = f0 ^ k_left48;    // left-aligned 48-bit
@@ -561,13 +562,22 @@ uint64_t processBlock(uint64_t block, int mode) {
     return final_block;
 }
 
-/* ---------- test main with the canonical DES test vector ---------- */ 
-
-
+uint64_t bswap_64(uint64_t value) {
+    return (value >> 56) | 
+           ((value << 40) & 0x00FF000000000000) |
+           ((value << 24) & 0x0000FF0000000000) |
+           ((value << 8)  & 0x000000FF00000000) |
+           ((value >> 8)  & 0x00000000FF000000) |
+           ((value >> 24) & 0x0000000000FF0000) |
+           ((value >> 40) & 0x000000000000FF00) |
+           (value << 56);
+}
 
 
 int main(int argc, char **argv)
 {
+        clock_t start_time, end_time;
+            start_time = clock();
     if (argc != 5) {
         printf("Usage:\n");
         printf("  %s e keyfile plaintext ciphertext\n", argv[0]);
@@ -601,7 +611,11 @@ int main(int argc, char **argv)
     fclose(fk);
 
     //generate key
-    generate_keys(key);
+    uint64_t key_swapped = bswap_64(key);
+    generate_keys(key_swapped);
+    printf("key:  0x%016" PRIx64 "\n", key);
+    printf("key Swapped:  0x%016" PRIx64 "\n", key_swapped);
+
 
     // input/output files
     FILE *fin = fopen(argv[3], "rb");
@@ -612,21 +626,37 @@ int main(int argc, char **argv)
         if (fout) fclose(fout);
         return 1;
     }
+
     uint64_t block_in, block_out;
+   uint64_t block_in_swapped, block_out_swapped;
     size_t n;
     while ((n = fread(&block_in, sizeof(uint64_t), 1, fin)) == 1) {
-        block_out = processBlock(block_in, mode);
+        // --- FIX 2: Byte-swap the input block ---
+        block_in_swapped = bswap_64(block_in);
+
+        // Process the corrected block
+        block_out_swapped = processBlock(block_in_swapped, mode);
+
+        // --- FIX 3: Byte-swap the output block *back* for the file ---
+        block_out = bswap_64(block_out_swapped);
+        // block_out = processBlock(block_in, mode);
         fwrite(&block_out, sizeof(uint64_t), 1, fout);
     }
 
     fclose(fin);
     fclose(fout);
+     printf("plaintext:  0x%016" PRIx64 "\n", block_in);
+     printf("plaintext swapped:  0x%016" PRIx64 "\n", block_in_swapped);
 
     printf("Operation completed successfully.\n");
+    printf("Cipher:  0x%016" PRIx64 "\n", block_out);
+    printf("Ciphertext swapped:  0x%016" PRIx64 "\n", block_out_swapped);
+        end_time = clock();
+            double time_spent = (double)(end_time - start_time) / CLOCKS_PER_SEC;
+                printf("Execution time: %f seconds\n", time_spent);
+
     return 0;
 }
-
-
 
 
 /*

@@ -565,8 +565,8 @@ uint64_t processBlock(uint64_t block, int mode) {
 int main(void) {
     // Canonical test vector
     uint64_t key = 0x0123456789ABCDEFULL;
-    uint64_t plain = 0x56cc09e7cfdc4cef;
-   // uint64_t expected = 0x85E813540F0AB405ULL;
+    uint64_t plain = 0x1234567890abcdefULL;
+   uint64_t expected = 0xBD661569AE874E25ULL;
 
     generate_keys(key);
 
@@ -576,15 +576,15 @@ int main(void) {
     printf("Key:     0x%016" PRIx64 "\n", key);
     printf("Plain:   0x%016" PRIx64 "\n", plain);
     printf("Cipher:  0x%016" PRIx64 "\n", cipher);
-   // printf("Expect:  0x%016" PRIx64 "\n", expected);
+   printf("Expect:  0x%016" PRIx64 "\n", expected);
     printf("Recover: 0x%016" PRIx64 "\n", recovered);
 
-   /* if (cipher == expected && recovered == plain) {
+    if (cipher == expected && recovered == plain) {
         printf("DES test vector OK.\n");
         return 0;
     } else {
         printf("DES test vector FAILED.\n");
         return 2;
-    }*/
+    }
 
 }

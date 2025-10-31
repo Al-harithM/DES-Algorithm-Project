@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 
 #define ROUNDS 16
 #define GETBIT64(x,pos) ( ( (x) >> (64 - (pos)) ) & 1ULL )  /* Get bit from uint64_t where pos is 1..64 and 1 is MSB */
@@ -18,7 +19,7 @@ uint32_t P_box(uint32_t in);
 uint64_t PC1(uint64_t key); //take the 64-bit key to permutate them into 56 bit
 uint64_t PC2(uint64_t cd56); //take the 56-bit key to permutate them into 48 bit
 uint64_t left_circular_shift(uint64_t val, int shift);
-uint64_t generate_keys(uint64_t key);
+void generate_keys(uint64_t key);
 char SBOX[64 * 8] = {
     // S1
     14,4,13,1,2,15,11,8,3,10,6,12,5,9,0,7,
@@ -255,7 +256,8 @@ uint32_t P_box(uint32_t in) {
     return out;
 }
 /*
-FUNCTION Generate_Subkeys(Main_Key: 64-bit block)
+//FUNCTION 
+Generate_Subkeys(Main_Key: 64-bit block)
     // 1. التبديل الاختياري الأول (PC-1): يقلل المفتاح من 64 إلى 56 بت
     Key_56_bit = Apply_Permutation(Main_Key, PC_1_Table)
 
